@@ -568,8 +568,7 @@
 <div id="toast"></div>
 
 <script>
-// Mocked APIs removed
-var API = '';
+var BASE_URL = 'http://127.0.0.1:5000';
 var farmerData = {};
 var currentEditField = '';
 var diseaseAlerts = [];
@@ -722,17 +721,10 @@ function showToast(msg) {
 }
 
 function loadDashboard() {
-  // Mocked Dashboard Response
-  Promise.resolve({
-    json: function() {
-      return Promise.resolve({
-        next_irrigation: { field: farmerData.fieldnames ? farmerData.fieldnames.split(',')[0].trim() : 'Field A', when: 'Tomorrow' },
-        alerts: [{ type: 'blue', icon: 'ℹ️', message: 'Offline Demo Mode Active', sub: 'All systems simulated locally' }],
-        fields: farmerData.fieldnames ? farmerData.fieldnames.split(',').map(function(name){ 
-          return { name: name.trim(), status: 'good', crop: farmerData.crops.split(',')[0] || '' };
-        }) : []
-      });
-    }
+  fetch(BASE_URL + '/api/dashboard', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ farmer: farmerData })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
@@ -743,6 +735,9 @@ function loadDashboard() {
     }
     renderAllAlerts(data.alerts || []);
     if (data.fields) renderFieldStatus(data.fields);
+  })
+  .catch(function() {
+    renderAllAlerts([{ type: 'amber', icon: '⚠️', message: 'Backend offline', sub: 'Start the server: python app.py' }]);
   });
 }
 
@@ -833,17 +828,17 @@ function submitLastIrrigation() {
   saveSession(); // 💾 persist irrigation dates
   document.getElementById('last-irr-section').style.display = 'none';
   document.getElementById('irr-result-section').style.display = 'block';
-  
-  // Mocked Irrigation Schedule Response
-  Promise.resolve({
-    json: function() {
-      return Promise.resolve({
-        ai_suggestion: "According to local offline logic, check soil moisture regularly.",
-        fields: entries.map(function(e){ return { name: e.field, status: 'water', crop: farmerData.crops.split(',')[0], when: 'Water Today', water_needed: 'High', crop_stage: 'Vegetative' }; })
-      });
-    }
+
+  fetch(BASE_URL + '/api/irrigation/schedule', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entries: entries, farmer: farmerData })
   })
-  .then(function(r) { return r.json(); }).then(renderIrrigation);
+  .then(function(r) { return r.json(); })
+  .then(renderIrrigation)
+  .catch(function() {
+    renderIrrigation({ ai_suggestion: 'Backend offline. Start the server: python app.py', fields: [] });
+  });
 }
 
 function renderIrrigation(data) {
@@ -912,8 +907,12 @@ function confirmStartIrrigation() {
   updateCountdown();
   irrTimer = setInterval(updateCountdown, 1000);
   
-  // Mock run api
-  Promise.resolve();
+  // POST to backend – fire and forget (UI update is local)
+  fetch(BASE_URL + '/api/irrigation/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ started_at: new Date().toISOString(), duration_minutes: irrAiMins, field: field, farmer: farmerData })
+  }).catch(function() {});
   showToast('Irrigation started!');
 }
 
@@ -928,8 +927,8 @@ function updateCountdown() {
 function stopIrrigation() {
   if (irrTimer) { clearInterval(irrTimer); irrTimer=null; }
   document.getElementById('irr-running-modal').classList.remove('show');
-  // Mock stop api
-  Promise.resolve();
+  // POST to backend
+  fetch(BASE_URL + '/api/irrigation/stop', { method: 'POST' }).catch(function() {});
   showToast('Irrigation stopped');
 }
 
@@ -947,18 +946,18 @@ function handleFileSelected(event) {
 
 function analyzeDisease(imageData) {
   var loading = document.getElementById('disease-loading'); loading.style.display='block';
-  
-  // Mocked Disease Check Response
-  setTimeout(function() {
-    Promise.resolve({
-      json: function() {
-        return Promise.resolve({
-          type: 'warning', title: 'Simulated Pathogen Found', treatment: 'Mock demo treatment: Ensure proper spacing and try mild organic fungicides.', noAlert: false
-        });
-      }
-    })
-    .then(function(r){return r.json();}).then(function(data){loading.style.display='none';showDiseaseResult(data);});
-  }, 1500);
+
+  fetch(BASE_URL + '/api/disease/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image: imageData, farmer: farmerData })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) { loading.style.display='none'; showDiseaseResult(data); })
+  .catch(function() {
+    loading.style.display='none';
+    showDiseaseResult({ type: 'warning', title: 'Backend offline', treatment: 'Start the server: python app.py', noAlert: true });
+  });
 }
 
 function showDiseaseResult(data) {
@@ -1034,25 +1033,15 @@ function runCropAdvisor() {
   btn.textContent = '⏳ Analysing...'; btn.disabled = true;
   document.getElementById('crop-results').style.display = 'none';
 
-  // Mocked Crop Advisor Output
-  setTimeout(function() {
-    Promise.resolve({
-      json: function() {
-        return Promise.resolve({
-          content: [{ text: '[{"name":"Wheat","emoji":"🌾","why":"Offline suggestion for ' + soil + ' soil."},{"name":"Pulses","emoji":"🌱","why":"Helps retain soil nitrogen."},{"name":"Mustard","emoji":"🌼","why":"Requires moderate water."}]' }]
-        });
-      }
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(data){
-      var raw = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '[]';
-      raw = raw.replace(/```json|```/g, '').trim();
-      var crops;
-      try { crops = JSON.parse(raw); } catch(e) { crops = []; }
-      showCropResults(crops);
-    })
-    ['finally'](function(){ btn.textContent = '🔍 Get Crop Suggestions'; btn.disabled = false; });
-  }, 1000);
+  fetch(BASE_URL + '/api/crop-advisor', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ soil: soil, season: season, water: water, farmer: farmerData })
+  })
+  .then(function(r) { return r.json(); })
+  .then(showCropResults)
+  .catch(function() { showCropResults([]); })
+  ['finally'](function(){ btn.textContent = '🔍 Get Crop Suggestions'; btn.disabled = false; });
 }
 
 function showCropResults(crops) {
@@ -1203,25 +1192,28 @@ function sendChatMessage() {
   chatTyping=true; showTyping();
   document.getElementById('chat-status-line').textContent='Thinking...';
 
-  // Mocked AI Chat Output
-  setTimeout(function() {
-    Promise.resolve({
-      json: function() {
-        return Promise.resolve({
-          content: [{ text: "This is an offline mock response from Kisan AI. The live API has been disabled, but I can see you're asking about your farm in " + farmerData.village + "!" }]
-        });
-      }
-    })
-    .then(function(r){return r.json();})
-    .then(function(data){
-      hideTyping();
-      var reply=(data.content&&data.content[0]&&data.content[0].text)?data.content[0].text:'Sorry, could not get a response. Please try again.';
-      chatHistory.push({role:'assistant',content:reply});
-      appendBubble('ai',fmtReply(reply));
-      document.getElementById('chat-status-line').textContent='Ask me anything about farming';
-    })
-    ['finally'](function(){chatTyping=false;document.getElementById('chat-send').disabled=false;});
-  }, 1000);
+  // Kisan AI Chat via backend
+  fetch(BASE_URL + '/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: text, history: chatHistory.slice(0, -1), farmer: farmerData })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data){
+    hideTyping();
+    var reply = data.reply || 'Sorry, could not get a response. Please try again.';
+    chatHistory.push({role:'assistant',content:reply});
+    appendBubble('ai',fmtReply(reply));
+    document.getElementById('chat-status-line').textContent='Ask me anything about farming';
+  })
+  .catch(function(){
+    hideTyping();
+    var reply = 'Backend offline. Please start the server: python app.py';
+    chatHistory.push({role:'assistant',content:reply});
+    appendBubble('ai',fmtReply(reply));
+    document.getElementById('chat-status-line').textContent='Ask me anything about farming';
+  })
+  ['finally'](function(){chatTyping=false;document.getElementById('chat-send').disabled=false;});
 }
 /* ═══════════════════════════════════
    AUTO-RESTORE SESSION ON PAGE LOAD
