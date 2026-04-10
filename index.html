@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agro Mind - Kisan App</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:#2e7d32; --green-lt:#43a047; --green-bg:#e8f5e9; --green-pale:#f1f8f2;
+    --red:#c62828; --red-bg:#ffebee; --amber:#f57f17; --amber-bg:#fff8e1;
+    --blue:#1565c0; --blue-bg:#e3f2fd; --text:#1b2a1c; --muted:#5a7a5c;
+    --border:#c8e6c9; --surface:#ffffff; --bg:#f4faf4;
+    --sidebar-w:220px; --top-h:58px; --radius:14px; --r-sm:10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Noto Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+  #login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#1b5e20 0%,#2e7d32 40%,#43a047 100%); padding:20px; }
+  .login-box { background:#fff; border-radius:24px; padding:36px 32px 32px; width:100%; max-width:500px; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+  .login-logo { text-align:center; margin-bottom:24px; }
+  .login-logo .logo-icon { font-size:52px; display:block; margin-bottom:6px; }
+  .login-logo h1 { font-family:'Baloo 2',cursive; font-size:28px; font-weight:800; color:var(--green); }
+  .login-logo p  { font-size:13px; color:var(--muted); margin-top:2px; }
+  .login-divider { text-align:center; font-size:13px; color:var(--muted); margin:4px 0 20px; position:relative; }
+  .login-divider::before,.login-divider::after { content:''; position:absolute; top:50%; width:35%; height:1px; background:var(--border); }
+  .login-divider::before { left:0; } .login-divider::after { right:0; }
+  .field-group { margin-bottom:14px; }
+  .field-label { display:block; font-size:13px; font-weight:600; color:var(--green); margin-bottom:5px; }
+  .field-label .req { color:var(--red); margin-left:2px; }
+  .field-label .opt { color:var(--muted); font-weight:400; font-size:11px; margin-left:4px; }
+  .field-input { width:100%; padding:11px 13px; border:2px solid var(--border); border-radius:var(--r-sm); font-family:'Noto Sans',sans-serif; font-size:14px; color:var(--text); background:var(--bg); transition:border-color 0.2s; outline:none; }
+  .field-input:focus { border-color:var(--green-lt); background:#fff; }
+  textarea.field-input { resize:vertical; min-height:72px; line-height:1.5; }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .login-btn { width:100%; padding:14px; background:linear-gradient(135deg,var(--green),var(--green-lt)); color:white; border:none; border-radius:var(--r-sm); font-family:'Baloo 2',cursive; font-size:17px; font-weight:700; cursor:pointer; margin-top:8px; transition:opacity 0.2s,transform 0.15s; }
+  .login-btn:hover { opacity:0.92; transform:translateY(-1px); }
+  .login-err { background:var(--red-bg); border:1px solid #ef9a9a; color:var(--red); border-radius:var(--r-sm); padding:10px 14px; font-size:13px; margin-bottom:12px; display:none; }
+  .login-err.show { display:block; }
+  .loc-row { display:flex; gap:8px; align-items:stretch; }
+  .loc-btn { padding:0 14px; background:var(--green); color:#fff; border:none; border-radius:var(--r-sm); font-size:18px; cursor:pointer; flex-shrink:0; }
+  #loc-status { font-size:12px; color:var(--muted); margin-top:5px; display:none; }
+  #map-preview { display:none; margin-top:10px; border-radius:var(--r-sm); overflow:hidden; border:2px solid var(--border); height:200px; }
+
+  #app { display:none; min-height:100vh; }
+  #app.visible { display:flex; }
+  .sidebar { width:var(--sidebar-w); background:var(--green); position:fixed; top:0; left:0; height:100vh; display:flex; flex-direction:column; z-index:200; transition:transform 0.3s; overflow-y:auto; }
+  .sb-brand { padding:18px 16px 14px; border-bottom:1px solid rgba(255,255,255,0.12); }
+  .sb-brand-row { display:flex; align-items:center; gap:10px; }
+  .sb-logo { font-size:26px; }
+  .sb-name { font-family:'Baloo 2',cursive; font-size:17px; font-weight:800; color:#fff; }
+  .sb-tagline { font-size:10px; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.8px; }
+  .sb-farmer { padding:10px 16px; border-bottom:1px solid rgba(255,255,255,0.1); }
+  .sb-farmer-name { font-size:13px; font-weight:700; color:#fff; }
+  .sb-farmer-sub  { font-size:11px; color:rgba(255,255,255,0.5); margin-top:1px; }
+  nav { padding:8px 0; flex:1; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:11px 16px; margin:2px 8px; border-radius:var(--r-sm); cursor:pointer; color:rgba(255,255,255,0.72); font-size:14px; font-weight:500; transition:all 0.15s; user-select:none; }
+  .nav-item:hover { background:rgba(255,255,255,0.1); color:#fff; }
+  .nav-item.active { background:rgba(255,255,255,0.18); color:#fff; font-weight:700; }
+  .nav-icon { font-size:18px; width:22px; text-align:center; flex-shrink:0; }
+  .nav-badge { margin-left:auto; background:var(--red); color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; }
+  .sb-bottom { padding:12px 16px; border-top:1px solid rgba(255,255,255,0.1); }
+  .sb-logout { display:flex; align-items:center; gap:8px; font-size:13px; color:rgba(255,255,255,0.5); cursor:pointer; padding:5px 0; }
+  .sb-logout:hover { color:rgba(255,255,255,0.9); }
+  .sb-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:199; }
+  .sb-overlay.show { display:block; }
+
+  .main { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-width:0; }
+  .topbar { height:var(--top-h); background:var(--surface); border-bottom:2px solid var(--border); padding:0 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+  .topbar-left { display:flex; align-items:center; gap:10px; }
+  .topbar-title { font-family:'Baloo 2',cursive; font-size:17px; font-weight:700; color:var(--green); }
+  .weather-chip { background:var(--blue-bg); color:var(--blue); border-radius:20px; padding:5px 11px; font-size:12px; font-weight:600; }
+  .hamburger { display:none; background:none; border:none; font-size:22px; cursor:pointer; color:var(--green); padding:4px; }
+
+  .page { display:none; padding:20px 20px 60px; animation:fadeUp 0.2s ease; }
+  .page.active { display:block; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+  .page-heading { font-family:'Baloo 2',cursive; font-size:20px; font-weight:800; color:var(--text); margin-bottom:16px; }
+  .card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:16px; margin-bottom:14px; }
+  .card-title { font-family:'Baloo 2',cursive; font-size:15px; font-weight:700; color:var(--text); margin-bottom:12px; display:flex; align-items:center; gap:7px; }
+  .stats-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .stat-card { background:var(--surface); border-radius:var(--radius); padding:16px 14px; border:2px solid transparent; display:flex; flex-direction:column; gap:5px; }
+  .stat-card.green { border-color:var(--border); }
+  .stat-card.red   { border-color:#ef9a9a; background:var(--red-bg); }
+  .stat-card.amber { border-color:#ffe082; background:var(--amber-bg); }
+  .stat-card.grey  { border-color:#e0e0e0; background:#fafafa; }
+  .stat-icon  { font-size:28px; }
+  .stat-label { font-size:10px; text-transform:uppercase; letter-spacing:0.6px; font-weight:700; color:var(--muted); }
+  .stat-value { font-family:'Baloo 2',cursive; font-size:20px; font-weight:800; color:var(--text); line-height:1.1; }
+  .stat-sub   { font-size:12px; font-weight:600; }
+  .stat-card.green .stat-sub { color:var(--green); }
+  .stat-card.red   .stat-sub { color:var(--red); }
+  .stat-card.amber .stat-sub { color:var(--amber); }
+  .stat-card.grey  .stat-sub { color:var(--muted); }
+  .no-data-msg { text-align:center; padding:24px 0; color:var(--muted); font-size:13px; }
+  .status-pill { padding:5px 13px; border-radius:20px; font-size:12px; font-weight:700; white-space:nowrap; }
+  .pill-good { background:var(--green-bg); color:var(--green); }
+  .pill-water { background:var(--amber-bg); color:var(--amber); }
+  .pill-critical { background:var(--red-bg); color:var(--red); }
+  .pill-grey { background:#f0f0f0; color:#888; }
+  .alert-item { display:flex; align-items:flex-start; gap:11px; padding:12px 13px; border-radius:var(--r-sm); margin-bottom:9px; font-size:13.5px; font-weight:600; line-height:1.4; }
+  .alert-item.red    { background:var(--red-bg);   color:var(--red);   border-left:4px solid var(--red); }
+  .alert-item.amber  { background:var(--amber-bg); color:var(--amber); border-left:4px solid var(--amber); }
+  .alert-item.blue   { background:var(--blue-bg);  color:var(--blue);  border-left:4px solid var(--blue); }
+  .alert-item.green  { background:var(--green-bg); color:var(--green); border-left:4px solid var(--green); }
+  .alert-icon { font-size:20px; flex-shrink:0; }
+  .alert-body { flex:1; }
+  .alert-title-text { font-weight:700; }
+  .alert-sub { font-size:12px; font-weight:400; margin-top:3px; opacity:0.8; }
+  .followup-banner { background:var(--amber-bg); border:2px solid #ffe082; border-radius:var(--radius); padding:14px 16px; margin-bottom:12px; }
+  .followup-banner h3 { font-family:'Baloo 2',cursive; font-size:15px; color:var(--amber); margin-bottom:6px; }
+  .followup-banner p  { font-size:13px; color:#7a5400; margin-bottom:12px; }
+  .followup-btns { display:flex; gap:10px; }
+  .fu-btn { flex:1; padding:10px; border-radius:var(--r-sm); border:none; font-family:'Baloo 2',cursive; font-size:14px; font-weight:700; cursor:pointer; }
+  .fu-yes { background:var(--green); color:white; }
+  .fu-no  { background:var(--red);   color:white; }
+  .big-btn { display:block; width:100%; padding:15px; border:none; border-radius:var(--r-sm); font-family:'Baloo 2',cursive; font-size:17px; font-weight:700; cursor:pointer; transition:opacity 0.2s,transform 0.15s; text-align:center; }
+  .big-btn:hover { opacity:0.9; transform:translateY(-1px); }
+  .big-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  .big-btn.green { background:var(--green); color:white; }
+  .irr-field-card { background:var(--green-pale); border:1px solid var(--border); border-radius:var(--r-sm); padding:14px 16px; margin-bottom:10px; }
+  .irr-field-card.urgent { background:var(--red-bg); border-color:#ef9a9a; }
+  .irr-field-card.done   { background:#f5f5f5; border-color:#e0e0e0; opacity:0.7; }
+  .irr-field-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .irr-field-name { font-family:'Baloo 2',cursive; font-size:15px; font-weight:700; }
+  .irr-field-crop { font-size:12px; color:var(--muted); margin-top:1px; }
+  .irr-details { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:8px; }
+  .irr-detail-box { background:rgba(255,255,255,0.7); border-radius:8px; padding:8px 10px; text-align:center; }
+  .irr-detail-label { font-size:10px; color:var(--muted); font-weight:600; text-transform:uppercase; }
+  .irr-detail-val   { font-family:'Baloo 2',cursive; font-size:14px; font-weight:700; color:var(--text); margin-top:2px; }
+  .ai-rec { background:var(--green-bg); border:1px solid var(--border); border-radius:var(--r-sm); padding:13px 15px; font-size:13.5px; color:var(--green); font-weight:600; margin-bottom:14px; display:flex; gap:10px; align-items:flex-start; line-height:1.4; }
+  .last-irr-field-card { background:var(--green-pale); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:14px; }
+  .last-irr-field-name { font-family:'Baloo 2',cursive; font-size:17px; font-weight:800; margin-bottom:4px; }
+  .last-irr-field-crop { font-size:13px; color:var(--muted); margin-bottom:16px; }
+  .last-irr-label { font-size:13px; font-weight:600; color:var(--green); margin-bottom:6px; display:block; }
+  .last-irr-input { width:100%; padding:12px 14px; border:2px solid var(--border); border-radius:var(--r-sm); font-family:'Noto Sans',sans-serif; font-size:14px; color:var(--text); background:#fff; outline:none; }
+  .irr-submit-section { margin-top:20px; }
+  .irr-submit-note { font-size:13px; color:var(--muted); text-align:center; margin-bottom:12px; line-height:1.5; }
+  .photo-btns { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+  .photo-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px 12px; border-radius:var(--radius); border:2px dashed var(--border); background:var(--green-pale); cursor:pointer; transition:all 0.2s; font-size:13px; font-weight:600; color:var(--green); text-align:center; }
+  .photo-btn:hover { border-color:var(--green-lt); background:var(--green-bg); }
+  .photo-btn .pb-icon { font-size:36px; }
+  #file-input-upload,#file-input-camera { display:none; }
+  #img-preview { max-width:100%; max-height:200px; border-radius:var(--r-sm); margin-bottom:12px; display:none; object-fit:cover; width:100%; }
+  #disease-loading { display:none; text-align:center; padding:24px; color:var(--muted); font-size:14px; }
+  .loading-dots::after { content:'...'; animation:dots 1.2s steps(4,end) infinite; }
+  @keyframes dots { 0%,20%{content:'.'} 40%{content:'..'} 60%,100%{content:'...'} }
+  .disease-result { display:none; border-radius:var(--r-sm); padding:16px; }
+  .disease-result.show { display:block; }
+  .disease-result.healthy { background:var(--green-bg); border:2px solid var(--border); }
+  .disease-result.warning { background:var(--amber-bg); border:2px solid #ffe082; }
+  .disease-result.danger  { background:var(--red-bg);   border:2px solid #ef9a9a; }
+  .disease-name { font-family:'Baloo 2',cursive; font-size:18px; font-weight:800; margin-bottom:6px; }
+  .disease-result.healthy .disease-name { color:var(--green); }
+  .disease-result.warning .disease-name { color:var(--amber); }
+  .disease-result.danger  .disease-name { color:var(--red); }
+  .disease-treatment { font-size:13.5px; line-height:1.6; }
+  .disease-add-alert-btn { margin-top:12px; width:100%; padding:11px; background:var(--red); color:white; border:none; border-radius:var(--r-sm); font-family:'Baloo 2',cursive; font-size:14px; font-weight:700; cursor:pointer; display:none; }
+  .disease-add-alert-btn.show { display:block; }
+  .simple-form { display:flex; flex-direction:column; gap:13px; }
+  .crop-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .crop-card { background:var(--green-pale); border:1px solid var(--border); border-radius:var(--r-sm); padding:14px 10px; text-align:center; }
+  .crop-emoji { font-size:34px; margin-bottom:5px; }
+  .crop-name  { font-family:'Baloo 2',cursive; font-size:13px; font-weight:700; }
+  .crop-why   { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.35; }
+  .settings-section { margin-bottom:16px; }
+  .settings-section h3 { font-family:'Baloo 2',cursive; font-size:14px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+  .settings-row { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid #eef5ef; gap:12px; }
+  .settings-row:last-child { border-bottom:none; }
+  .settings-row-label { font-size:14px; font-weight:600; flex:1; }
+  .settings-row-sub   { font-size:12px; color:var(--muted); margin-top:2px; }
+  .settings-edit-btn { padding:7px 14px; background:var(--green-bg); color:var(--green); border:1px solid var(--border); border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
+  .settings-edit-input { width:100%; padding:9px 12px; border:2px solid var(--border); border-radius:var(--r-sm); font-family:'Noto Sans',sans-serif; font-size:13px; outline:none; margin-top:6px; background:var(--bg); }
+
+  #toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(60px); background:var(--text); color:#fff; padding:10px 22px; border-radius:24px; font-size:13.5px; font-weight:600; z-index:9999; transition:transform 0.3s; white-space:nowrap; pointer-events:none; box-shadow:0 4px 16px rgba(0,0,0,0.2); }
+  #toast.show { transform:translateX(-50%) translateY(0); }
+
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.show { display:flex; }
+  .modal-box { background:#fff; border-radius:20px; padding:24px 22px; width:100%; max-width:400px; box-shadow:0 16px 48px rgba(0,0,0,0.2); }
+  .modal-title { font-family:'Baloo 2',cursive; font-size:18px; font-weight:800; margin-bottom:14px; }
+  .modal-btns { display:flex; gap:10px; margin-top:18px; }
+  .modal-btn { flex:1; padding:12px; border:none; border-radius:var(--r-sm); font-family:'Baloo 2',cursive; font-size:15px; font-weight:700; cursor:pointer; }
+  .modal-btn.green { background:var(--green); color:white; }
+  .modal-btn.grey  { background:#e0e0e0; color:#444; }
+  .modal-btn.red   { background:var(--red); color:white; }
+  .irr-timing-group { margin-bottom:18px; }
+  .irr-timing-label { display:block; font-size:13px; font-weight:600; color:var(--green); margin-bottom:7px; }
+  .irr-timing-input { width:100%; padding:13px 14px; border:2px solid var(--border); border-radius:var(--r-sm); font-family:'Noto Sans',sans-serif; font-size:15px; color:var(--text); background:var(--bg); outline:none; }
+
+  #page-chat.active { display:flex !important; flex-direction:column; padding:0; height:calc(100vh - var(--top-h)); overflow:hidden; }
+  .chat-header { display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--surface); border-bottom:1px solid var(--border); flex-shrink:0; }
+  .chat-header-avatar { width:42px; height:42px; background:var(--green); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .chat-header-name { font-family:'Baloo 2',cursive; font-size:15px; font-weight:800; }
+  .chat-header-sub  { font-size:11px; color:var(--muted); margin-top:1px; }
+  .chat-messages { flex:1; overflow-y:auto; padding:16px 14px; display:flex; flex-direction:column; gap:10px; background:var(--bg); }
+  .chat-bubble { display:flex; flex-direction:column; max-width:85%; }
+  .chat-bubble.user { align-self:flex-end; align-items:flex-end; }
+  .chat-bubble.ai   { align-self:flex-start; align-items:flex-start; }
+  .chat-bubble-inner { padding:11px 14px; border-radius:18px; font-size:14px; line-height:1.55; word-break:break-word; }
+  .chat-bubble.user .chat-bubble-inner { background:var(--green); color:#fff; border-bottom-right-radius:4px; }
+  .chat-bubble.ai   .chat-bubble-inner { background:var(--surface); color:var(--text); border:1px solid var(--border); border-bottom-left-radius:4px; }
+  .chat-time { font-size:10px; color:var(--muted); margin-top:3px; padding:0 4px; }
+  .typing-dots { display:flex; gap:4px; align-items:center; padding:4px 2px; }
+  .typing-dots span { width:7px; height:7px; background:var(--muted); border-radius:50%; animation:typeBounce 1.2s infinite ease-in-out; }
+  .typing-dots span:nth-child(2) { animation-delay:0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay:0.4s; }
+  @keyframes typeBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+  .chat-chips { display:flex; gap:8px; padding:8px 14px; overflow-x:auto; flex-shrink:0; background:var(--bg); scrollbar-width:none; }
+  .chat-chips::-webkit-scrollbar { display:none; }
+  .chip { white-space:nowrap; padding:7px 14px; background:var(--surface); border:1.5px solid var(--border); border-radius:20px; font-size:12px; font-weight:600; color:var(--green); cursor:pointer; flex-shrink:0; }
+  .chip:hover { background:var(--green-bg); }
+  .chat-input-bar { display:flex; align-items:flex-end; gap:10px; padding:10px 14px 14px; background:var(--surface); border-top:1px solid var(--border); flex-shrink:0; }
+  .chat-textarea { flex:1; padding:11px 14px; border:2px solid var(--border); border-radius:22px; font-family:'Noto Sans',sans-serif; font-size:14px; color:var(--text); background:var(--bg); outline:none; resize:none; max-height:120px; line-height:1.5; }
+  .chat-textarea:focus { border-color:var(--green-lt); background:#fff; }
+  .chat-send-btn { width:44px; height:44px; background:var(--green); color:#fff; border:none; border-radius:50%; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .chat-send-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  @media (max-width:700px) {
+    .sidebar { transform:translateX(-100%); }
+    .sidebar.open { transform:translateX(0); }
+    .main { margin-left:0; }
+    .hamburger { display:block; }
+    .stats-row { grid-template-columns:1fr 1fr; }
+    .crop-grid { grid-template-columns:1fr 1fr; }
+    .field-row { grid-template-columns:1fr; }
+    .irr-details { grid-template-columns:1fr 1fr; }
+    .photo-btns { grid-template-columns:1fr 1fr; }
+    #page-chat.active { height:calc(100vh - var(--top-h)); }
+  }
+
+  /* ── GOOGLE MAP CARD ── */
+  #farm-map-card { padding:0; overflow:hidden; }
+  #farm-map-card .card-title { padding:14px 16px 10px; margin-bottom:0; }
+  #dashboard-map { width:100%; height:220px; background:#e8e8e8; display:flex; align-items:center; justify-content:center; color:#555; }
+  #map-preview   { display:none; margin-top:10px; border-radius:var(--r-sm); overflow:hidden; border:2px solid var(--border); height:200px; background:#e8e8e8;}
+  #google-map-login { width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#555; font-size:13px; }
+
+  /* ── WEATHER DETAIL STRIP ── */
+  .weather-strip {
+    display:flex; gap:0; background:var(--blue-bg);
+    border-radius:var(--radius); overflow:hidden; margin-bottom:14px;
+  }
+  .wx-cell {
+    flex:1; padding:12px 8px; text-align:center;
+    border-right:1px solid #bbdefb;
+  }
+  .wx-cell:last-child { border-right:none; }
+  .wx-icon  { font-size:22px; }
+  .wx-val   { font-family:'Baloo 2',cursive; font-size:15px; font-weight:800; color:var(--blue); }
+  .wx-label { font-size:10px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.4px; margin-top:1px; }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="logo-icon">&#127806;</span>
+      <h1>Agro Mind</h1>
+      <p>Smart farming &#8212; simple for every kisan</p>
+    </div>
+    <div class="login-divider">Enter your farm details to begin</div>
+    <div id="login-err" class="login-err"></div>
+    <div class="field-group">
+      <label class="field-label">Your Full Name <span class="req">*</span></label>
+      <input class="field-input" id="l-name" type="text" placeholder="e.g. Gurpreet Singh">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Village / Town <span class="req">*</span></label>
+      <div class="loc-row">
+        <input class="field-input" id="l-village" type="text" placeholder="e.g. Khanna, Punjab" style="flex:1;">
+        <button type="button" class="loc-btn" onclick="detectLocation()" title="Detect my location">&#128205;</button>
+      </div>
+      <div id="loc-status"></div>
+      <div id="map-preview"><div id="google-map-login">Map Placeholder</div></div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Number of Fields <span class="req">*</span></label>
+        <input class="field-input" id="l-numfields" type="number" min="1" placeholder="e.g. 4">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Total Land (Acres) <span class="opt">(optional)</span></label>
+        <input class="field-input" id="l-acres" type="number" min="0.5" step="0.5" placeholder="e.g. 12">
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Field Names <span class="req">*</span></label>
+      <input class="field-input" id="l-fieldnames" type="text" placeholder="e.g. Field A, Field B, South Plot">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Crops You Grow <span class="req">*</span></label>
+      <textarea class="field-input" id="l-crops" placeholder="e.g. Wheat, Rice, Cotton, Mustard"></textarea>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Water Source <span class="opt">(optional)</span></label>
+      <input class="field-input" id="l-water" type="text" placeholder="e.g. Canal, Borewell, Rainwater">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Anything else about your farm <span class="opt">(optional)</span></label>
+      <textarea class="field-input" id="l-notes" placeholder="e.g. soil type, nearby river, past issues..."></textarea>
+    </div>
+    <button class="login-btn" onclick="doLogin()">&#127807; Start Using Agro Mind</button>
+  </div>
+</div>
+
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <div class="sb-brand-row">
+        <span class="sb-logo">&#127806;</span>
+        <div><div class="sb-name">Agro Mind</div><div class="sb-tagline">Smart Kisan App</div></div>
+      </div>
+    </div>
+    <div class="sb-farmer">
+      <div class="sb-farmer-name" id="sb-name">&#8212;</div>
+      <div class="sb-farmer-sub"  id="sb-sub">&#8212;</div>
+    </div>
+    <nav>
+      <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">&#127968;</span> Dashboard<span class="nav-badge" id="nav-badge" style="display:none">0</span></div>
+      <div class="nav-item" onclick="nav('irrigation',this)"><span class="nav-icon">&#128167;</span> Irrigation</div>
+      <div class="nav-item" onclick="nav('disease',this)"><span class="nav-icon">&#128269;</span> Disease Check</div>
+      <div class="nav-item" onclick="nav('crops',this)"><span class="nav-icon">&#127807;</span> Crop Advice</div>
+      <div class="nav-item" onclick="nav('chat',this)"><span class="nav-icon">&#129302;</span> Kisan AI Chat</div>
+      <div class="nav-item" onclick="nav('settings',this)"><span class="nav-icon">&#9881;</span> Settings</div>
+    </nav>
+    <div class="sb-bottom"><div class="sb-logout" onclick="doLogout()"><span>&#128682;</span> Log Out</div></div>
+  </aside>
+  <div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+      </div>
+      <div class="topbar-right"><div class="weather-chip" id="weather-chip">&#9728;&#65039; &#8212;</div></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section class="page active" id="page-dashboard">
+      <div class="stats-row">
+        <div class="stat-card green" id="stat-next-irr">
+          <div class="stat-icon">&#9201;&#65039;</div>
+          <div class="stat-label">Next Irrigation</div>
+          <div class="stat-value" id="dash-next-irr-val">&#8212;</div>
+          <div class="stat-sub"   id="dash-next-irr-sub">Waiting for data</div>
+        </div>
+        <div class="stat-card grey" id="stat-attention">
+          <div class="stat-icon">&#128680;</div>
+          <div class="stat-label">Needs Attention</div>
+          <div class="stat-value" id="dash-attention-val">&#8212;</div>
+          <div class="stat-sub"   id="dash-attention-sub">No alerts</div>
+        </div>
+      </div>
+      <div id="followup-container"></div>
+
+      <!-- Live Weather Strip -->
+      <div class="weather-strip" id="wx-strip" style="display:none">
+        <div class="wx-cell"><div class="wx-icon" id="wx-icon">☀️</div><div class="wx-val" id="wx-temp">—</div><div class="wx-label">Temp</div></div>
+        <div class="wx-cell"><div class="wx-icon">💧</div><div class="wx-val" id="wx-hum">—</div><div class="wx-label">Humidity</div></div>
+        <div class="wx-cell"><div class="wx-icon">🌬️</div><div class="wx-val" id="wx-wind">—</div><div class="wx-label">Wind</div></div>
+        <div class="wx-cell"><div class="wx-icon">☁️</div><div class="wx-val" id="wx-desc">—</div><div class="wx-label">Condition</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#127807; Field Status</div>
+        <div id="soil-status"><div class="no-data-msg">No field data yet</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128276; Alerts <span id="alert-count-badge" style="display:none;margin-left:6px;font-size:11px;background:var(--red);color:#fff;padding:2px 8px;border-radius:10px;"></span></div>
+        <div id="alerts-list"><div class="no-data-msg">No alerts right now &#128077;</div></div>
+      </div>
+
+      <!-- Farm Location Map Card -->
+      <div class="card" id="farm-map-card" style="display:none;padding:0;overflow:hidden;">
+        <div class="card-title" style="padding:14px 16px 10px;margin-bottom:0;">&#128205; Your Farm Location</div>
+        <div id="dashboard-map">Map View Unavailable</div>
+      </div>
+    </section>
+
+    <!-- IRRIGATION -->
+    <section class="page" id="page-irrigation">
+      <div class="page-heading">&#128167; Irrigation</div>
+      <div id="last-irr-section">
+        <div class="card">
+          <div class="card-title">&#128197; When did you last water each field?</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">Fill this in so we can calculate when each field needs water next.</p>
+          <div id="last-irr-fields"><div class="no-data-msg">Please log in first.</div></div>
+          <div class="irr-submit-section">
+            <p class="irr-submit-note">You can leave a field blank if you are not sure.</p>
+            <button class="big-btn green" onclick="submitLastIrrigation()">&#128197; Calculate My Irrigation Schedule</button>
+          </div>
+        </div>
+      </div>
+      <div id="irr-result-section" style="display:none;">
+        <div class="ai-rec" id="irr-ai-box">
+          <div style="font-size:20px;flex-shrink:0;">&#129302;</div>
+          <div id="irr-ai-text">AI suggestion will appear here once backend is connected</div>
+        </div>
+        <div id="irr-schedule-list"><div class="no-data-msg" style="padding:30px 0">Calculating schedule...</div></div>
+        <br>
+        <button class="big-btn green" onclick="startIrrigation()">&#9654; Start Irrigation</button>
+        <br><br>
+        <button class="big-btn" style="background:#f0f0f0;color:var(--muted);font-size:14px;" onclick="resetIrrigationForm()">&#9998;&#65039; Update Last Irrigation Dates</button>
+      </div>
+    </section>
+
+    <!-- DISEASE -->
+    <section class="page" id="page-disease">
+      <div class="page-heading">&#128269; Disease Check</div>
+      <div class="card">
+        <div class="card-title">&#128247; Take or Upload a Leaf Photo</div>
+        <div class="photo-btns">
+          <div class="photo-btn" onclick="document.getElementById('file-input-camera').click()">
+            <span class="pb-icon">&#128248;</span>
+            <span>Take Photo<br><small style="font-weight:400;color:var(--muted)">Use camera now</small></span>
+          </div>
+          <div class="photo-btn" onclick="document.getElementById('file-input-upload').click()">
+            <span class="pb-icon">&#128444;&#65039;</span>
+            <span>Upload Photo<br><small style="font-weight:400;color:var(--muted)">From gallery</small></span>
+          </div>
+        </div>
+        <input type="file" id="file-input-camera" accept="image/*" capture="environment" onchange="handleFileSelected(event)">
+        <input type="file" id="file-input-upload" accept="image/*" onchange="handleFileSelected(event)">
+        <img id="img-preview" src="" alt="Leaf preview">
+        <div id="disease-loading">&#8987; Checking your plant<span class="loading-dots"></span></div>
+        <div class="disease-result" id="disease-result">
+          <div class="disease-name" id="disease-title"></div>
+          <div class="disease-treatment" id="disease-desc"></div>
+          <button class="disease-add-alert-btn" id="add-alert-btn" onclick="addDiseaseAlert()">&#128680; Add Alert &#8212; My crop needs attention</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CROP ADVICE -->
+    <section class="page" id="page-crops">
+      <div class="page-heading">&#127807; Which Crop Should I Grow?</div>
+      <div class="card">
+        <div class="card-title">&#127757; Tell us about your field</div>
+        <div class="simple-form">
+          <div class="field-group">
+            <label class="field-label">Soil Type</label>
+            <input class="field-input" id="c-soil" type="text" placeholder="e.g. Loamy, Clay, Sandy, Black soil">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Season</label>
+            <input class="field-input" id="c-season" type="text" placeholder="e.g. Rabi (Oct-Mar), Kharif (Jun-Sep)">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Water Availability</label>
+            <input class="field-input" id="c-water" type="text" placeholder="e.g. Canal (lots), Borewell (medium)">
+          </div>
+        </div>
+        <br>
+        <button class="big-btn green" id="crop-btn" onclick="runCropAdvisor()">&#128269; Get Crop Suggestions</button>
+      </div>
+      <div class="card" id="crop-results" style="display:none">
+        <div class="card-title">&#9989; Best Crops for Your Field</div>
+        <div class="crop-grid" id="crop-grid"></div>
+      </div>
+    </section>
+
+    <!-- KISAN AI CHAT -->
+    <section class="page" id="page-chat">
+      <div class="chat-header">
+        <div class="chat-header-avatar">&#129302;</div>
+        <div>
+          <div class="chat-header-name">Kisan AI Assistant</div>
+          <div class="chat-header-sub" id="chat-status-line">Ask me anything about farming</div>
+        </div>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-bubble ai">
+          <div class="chat-bubble-inner">Namaste! &#128591; I am your Kisan AI. Ask me anything about your crops, soil, pests, irrigation, weather, or market prices. I am here to help you farm better!</div>
+          <div class="chat-time">Just now</div>
+        </div>
+      </div>
+      <div class="chat-chips" id="chat-chips">
+        <button class="chip" onclick="sendChip(this)">When to water wheat?</button>
+        <button class="chip" onclick="sendChip(this)">Signs of pest attack</button>
+        <button class="chip" onclick="sendChip(this)">Best fertilizer for rice</button>
+        <button class="chip" onclick="sendChip(this)">How to improve soil?</button>
+      </div>
+      <div class="chat-input-bar">
+        <textarea class="chat-textarea" id="chat-input" rows="1" placeholder="Type your question..." onkeydown="chatKeydown(event)" oninput="autoResize(this)"></textarea>
+        <button class="chat-send-btn" id="chat-send" onclick="sendChatMessage()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="page-settings">
+      <div class="page-heading">&#9881;&#65039; Settings</div>
+      <div class="card">
+        <div class="settings-section">
+          <h3>Farmer Info</h3>
+          <div class="settings-row"><div><div class="settings-row-label">Name</div><div class="settings-row-sub" id="s-name-val">&#8212;</div></div><button class="settings-edit-btn" onclick="editField('name')">Edit</button></div>
+          <div class="settings-row"><div><div class="settings-row-label">Village / Town</div><div class="settings-row-sub" id="s-village-val">&#8212;</div></div><button class="settings-edit-btn" onclick="editField('village')">Edit</button></div>
+          <div class="settings-row"><div><div class="settings-row-label">Water Source</div><div class="settings-row-sub" id="s-water-val">&#8212;</div></div><button class="settings-edit-btn" onclick="editField('water')">Edit</button></div>
+        </div>
+        <div class="settings-section">
+          <h3>Farm Details</h3>
+          <div class="settings-row"><div><div class="settings-row-label">Number of Fields</div><div class="settings-row-sub" id="s-numfields-val">&#8212;</div></div><button class="settings-edit-btn" onclick="editField('numfields')">Edit</button></div>
+          <div class="settings-row"><div><div class="settings-row-label">Field Names</div><div class="settings-row-sub" id="s-fieldnames-val">&#8212;</div></div><button class="settings-edit-btn" onclick="editField('fieldnames')">Edit</button></div>
+          <div class="settings-row"><div><div class="settings-row-label">Crops Grown</div><div class="settings-row-sub" id="s-crops-val">&#8212;</div></div><button class="settings-edit-btn" onclick="editField('crops')">Edit</button></div>
+          <div class="settings-row"><div><div class="settings-row-label">Total Land (Acres)</div><div class="settings-row-sub" id="s-acres-val">Not set</div></div><button class="settings-edit-btn" onclick="editField('acres')">Edit</button></div>
+        </div>
+        <div class="settings-section">
+          <h3>Disease Alerts</h3>
+          <div class="settings-row"><div><div class="settings-row-label">Active Alerts</div><div class="settings-row-sub" id="s-alerts-val">None</div></div><button class="settings-edit-btn" onclick="clearAllAlerts()">Clear All</button></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Edit</div>
+    <div id="modal-input-wrap"></div>
+    <div class="modal-btns">
+      <button class="modal-btn grey" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn green" onclick="saveModalField()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Irrigation Start Modal -->
+<div class="modal-overlay" id="irr-timing-modal">
+  <div class="modal-box">
+    <div class="modal-title">&#128167; Start Irrigation Now</div>
+    <div class="irr-timing-group">
+      <label class="irr-timing-label">Which field? <span style="color:var(--red)">*</span></label>
+      <input class="irr-timing-input" id="irr-which-field" type="text" placeholder="e.g. Field A, or All Fields">
+      <div style="font-size:12px;color:var(--muted);margin-top:5px;">Write field name, or "All Fields"</div>
+    </div>
+    <div style="background:var(--green-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">AI Recommended Duration</div>
+      <div id="irr-ai-duration-val" style="font-family:'Baloo 2',cursive;font-size:26px;font-weight:800;color:var(--green);">&#8212;</div>
+      <div id="irr-ai-duration-reason" style="font-size:12px;color:var(--muted);margin-top:4px;">Based on your crops and field data</div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn grey" onclick="document.getElementById('irr-timing-modal').classList.remove('show')">Cancel</button>
+      <button class="modal-btn green" onclick="confirmStartIrrigation()">&#9654; Start Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- Irrigation Running Modal -->
+<div class="modal-overlay" id="irr-running-modal">
+  <div class="modal-box" style="text-align:center;">
+    <div style="font-size:48px;margin-bottom:8px;">&#128167;</div>
+    <div class="modal-title" style="justify-content:center;">Irrigation Running</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:2px;" id="irr-running-field">&#8212;</div>
+    <div style="font-size:12px;color:var(--green);font-weight:700;margin-bottom:10px;">Total: <span id="irr-running-duration">&#8212;</span></div>
+    <div style="font-family:'Baloo 2',cursive;font-size:46px;font-weight:800;color:var(--green);margin:8px 0;letter-spacing:2px;" id="irr-countdown">00:00</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px;">Time remaining</div>
+    <div style="width:100%;background:#e0e0e0;border-radius:10px;height:8px;margin-bottom:20px;overflow:hidden;">
+      <div id="irr-progress-bar" style="height:8px;background:linear-gradient(90deg,var(--green),var(--green-lt));border-radius:10px;width:100%;transition:width 1s linear;"></div>
+    </div>
+    <button class="modal-btn red" style="width:100%;" onclick="stopIrrigation()">&#9209; Stop Irrigation</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// Mocked APIs removed
+var API = '';
+var farmerData = {};
+var currentEditField = '';
+var diseaseAlerts = [];
+var lastDiseaseResult = null;
+var chatHistory = [];
+var chatTyping = false;
+var lastIrrData = {};
+
+/* ═══════════════════════════════════
+   MOCK GOOGLE MAPS API OBJECT
+═══════════════════════════════════ */
+window.google = {
+  maps: {
+    Map: function(){ return { addListener: function(){}, setCenter: function(){} }; },
+    Marker: function(){ return { addListener: function(){}, setPosition: function(){} }; },
+    InfoWindow: function(){ return { open: function(){} }; },
+    Geocoder: function(){ 
+      return { 
+        geocode: function(req, cb) { 
+          cb([{address_components:[{long_name:'Mock Village', types:['locality']}]}], 'OK'); 
+        } 
+      }; 
+    },
+    Animation: { DROP: 1 },
+    SymbolPath: { CIRCLE: 1 }
+  }
+};
+var gmapsLoaded = true;
+
+/* ═══════════════════════════════════
+   COOKIE SYSTEM — 30-day persistence
+═══════════════════════════════════ */
+var COOKIE_FARMER  = 'agromind_farmer';
+var COOKIE_ALERTS  = 'agromind_alerts';
+var COOKIE_LASTIRR = 'agromind_lastirr';
+var COOKIE_DAYS    = 30;
+function setCookie(name,value,days){var e=new Date(Date.now()+days*864e5).toUTCString();document.cookie=name+'='+encodeURIComponent(JSON.stringify(value))+'; expires='+e+'; path=/; SameSite=Lax';}
+function getCookie(name){var m=document.cookie.split('; ').find(function(r){return r.startsWith(name+'=');});if(!m)return null;try{return JSON.parse(decodeURIComponent(m.split('=').slice(1).join('=')));}catch(e){return null;}}
+function deleteCookie(name){document.cookie=name+'=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';}
+function saveSession(){
+  setCookie(COOKIE_FARMER,farmerData,COOKIE_DAYS);
+  setCookie(COOKIE_ALERTS,diseaseAlerts.map(function(a){return{id:a.id,fieldName:a.fieldName,diseaseName:a.diseaseName,treatment:a.treatment,resolved:a.resolved,addedAt:a.addedAt?new Date(a.addedAt).toISOString():null,followupAt:a.followupAt?new Date(a.followupAt).toISOString():null};}),COOKIE_DAYS);
+  setCookie(COOKIE_LASTIRR,lastIrrData,COOKIE_DAYS);
+}
+function loadSession(){
+  var farmer=getCookie(COOKIE_FARMER),alerts=getCookie(COOKIE_ALERTS),lastIrr=getCookie(COOKIE_LASTIRR);
+  if(farmer&&farmer.name){
+    farmerData=farmer;
+    if(Array.isArray(alerts)){diseaseAlerts=alerts.map(function(a){return{id:a.id,fieldName:a.fieldName,diseaseName:a.diseaseName,treatment:a.treatment,resolved:a.resolved,addedAt:a.addedAt?new Date(a.addedAt):null,followupAt:a.followupAt?new Date(a.followupAt):null};});}
+    if(lastIrr&&typeof lastIrr==='object')lastIrrData=lastIrr;
+    return true;
+  }
+  return false;
+}
+function clearSession(){deleteCookie(COOKIE_FARMER);deleteCookie(COOKIE_ALERTS);deleteCookie(COOKIE_LASTIRR);}
+
+function doLogin() {
+  var name = document.getElementById('l-name').value.trim();
+  var village = document.getElementById('l-village').value.trim();
+  var numfields = document.getElementById('l-numfields').value.trim();
+  var fieldnames = document.getElementById('l-fieldnames').value.trim();
+  var crops = document.getElementById('l-crops').value.trim();
+  var err = document.getElementById('login-err');
+  if (!name || !village || !numfields || !fieldnames || !crops) {
+    err.className = 'login-err show';
+    err.textContent = 'Please fill in all required fields (marked with *).';
+    return;
+  }
+  if (isNaN(parseInt(numfields)) || parseInt(numfields) < 1) {
+    err.className = 'login-err show';
+    err.textContent = 'Please enter a valid number of fields.';
+    return;
+  }
+  err.className = 'login-err';
+  farmerData = {
+    name: name, village: village, numfields: parseInt(numfields),
+    acres: document.getElementById('l-acres').value.trim() || '',
+    fieldnames: fieldnames, crops: crops,
+    water: document.getElementById('l-water').value.trim(),
+    notes: document.getElementById('l-notes').value.trim()
+  };
+  saveSession(); // 💾 persist farmer profile
+  initApp();
+}
+
+function initApp() {
+  document.getElementById('sb-name').textContent = farmerData.name;
+  var acresTxt = farmerData.acres ? ' - ' + farmerData.acres + ' acres' : '';
+  document.getElementById('sb-sub').textContent = farmerData.village + ' - ' + farmerData.numfields + ' fields' + acresTxt;
+  refreshSettingsDisplay();
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  loadDashboard();
+  loadWeather();
+
+  // Welcome-back toast if restored from cookie
+  if (window._restoredFromCookie) {
+    window._restoredFromCookie = false;
+    showToast('👋 Welcome back, ' + farmerData.name + '!');
+  }
+
+  // Show farm map on dashboard using coords from login (if captured)
+  if (farmerLat !== null && farmerLon !== null) {
+    initDashboardMap(farmerLat, farmerLon);
+  }
+}
+
+function doLogout() {
+  clearSession(); // 🗑️ wipe all cookies
+  farmerData = {}; lastIrrData = {};
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').classList.remove('visible');
+  diseaseAlerts = []; lastDiseaseResult = null; chatHistory = [];
+  document.getElementById('disease-result').className = 'disease-result';
+  document.getElementById('img-preview').style.display = 'none';
+  document.getElementById('add-alert-btn').classList.remove('show');
+  document.getElementById('crop-results').style.display = 'none';
+  nav('dashboard');
+}
+
+var PAGE_TITLES = { dashboard:'Dashboard', irrigation:'Irrigation', disease:'Disease Check', crops:'Crop Advice', chat:'Kisan AI Chat', settings:'Settings' };
+
+function nav(id, el) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[id] || id;
+  if (window.innerWidth <= 700) closeSidebar();
+  if (id === 'irrigation' && farmerData && farmerData.fieldnames) renderLastIrrFields();
+}
+
+function toggleSidebar() {
+  var s = document.getElementById('sidebar'), o = document.getElementById('sb-overlay');
+  if (s.classList.contains('open')) { closeSidebar(); return; }
+  s.classList.add('open'); o.classList.add('show'); document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+var toastTimer;
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.remove('show'); }, 3200);
+}
+
+function loadDashboard() {
+  // Mocked Dashboard Response
+  Promise.resolve({
+    json: function() {
+      return Promise.resolve({
+        next_irrigation: { field: farmerData.fieldnames ? farmerData.fieldnames.split(',')[0].trim() : 'Field A', when: 'Tomorrow' },
+        alerts: [{ type: 'blue', icon: 'ℹ️', message: 'Offline Demo Mode Active', sub: 'All systems simulated locally' }],
+        fields: farmerData.fieldnames ? farmerData.fieldnames.split(',').map(function(name){ 
+          return { name: name.trim(), status: 'good', crop: farmerData.crops.split(',')[0] || '' };
+        }) : []
+      });
+    }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.next_irrigation) {
+      document.getElementById('dash-next-irr-val').textContent = data.next_irrigation.field || 'See schedule';
+      document.getElementById('dash-next-irr-sub').textContent = data.next_irrigation.when || '';
+      document.getElementById('stat-next-irr').className = 'stat-card amber';
+    }
+    renderAllAlerts(data.alerts || []);
+    if (data.fields) renderFieldStatus(data.fields);
+  });
+}
+
+var farmerLat = null, farmerLon = null;
+
+function loadWeather() {
+  if (farmerLat !== null && farmerLon !== null) {
+    fetchWeatherByCoords(farmerLat, farmerLon);
+  } else {
+    // Mock Geocoding Response
+    Promise.resolve({ json: function(){ return Promise.resolve([{ lat: 30.9, lon: 75.85 }]); } })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data.length > 0) fetchWeatherByCoords(data[0].lat, data[0].lon);
+      });
+  }
+}
+
+function fetchWeatherByCoords(lat, lon) {
+  // Mock Weather Response
+  Promise.resolve({ json: function(){ return Promise.resolve({
+      main: { temp: 28, humidity: 62 },
+      wind: { speed: 14 },
+      weather: [{ id: 800, main: 'Clear', description: 'clear sky' }]
+  }); } })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var temp  = Math.round(d.main.temp) + '°C';
+      var hum   = d.main.humidity + '%';
+      var wind  = Math.round(d.wind.speed) + ' km/h';
+      var desc  = d.weather[0].main;
+      var icon  = owmIcon(d.weather[0].id);
+
+      // Topbar chip
+      document.getElementById('weather-chip').textContent = icon + ' ' + temp + '  ' + desc;
+
+      // Dashboard weather strip
+      var strip = document.getElementById('wx-strip');
+      if (strip) {
+        document.getElementById('wx-icon').textContent  = icon;
+        document.getElementById('wx-temp').textContent  = temp;
+        document.getElementById('wx-hum').textContent   = hum;
+        document.getElementById('wx-wind').textContent  = wind;
+        document.getElementById('wx-desc').textContent  = desc;
+        strip.style.display = 'flex';
+      }
+    });
+}
+
+function owmIcon(code) {
+  if (code >= 200 && code < 300) return '⛈️';
+  if (code >= 300 && code < 400) return '🌦️';
+  if (code >= 500 && code < 600) return '🌧️';
+  if (code >= 600 && code < 700) return '❄️';
+  if (code >= 700 && code < 800) return '🌫️';
+  if (code === 800) return '☀️';
+  if (code === 801) return '🌤️';
+  if (code === 802) return '⛅';
+  return '☁️';
+}
+
+function renderFieldStatus(fields) {
+  if (!fields || !fields.length) { document.getElementById('soil-status').innerHTML = '<div class="no-data-msg">No field data</div>'; return; }
+  document.getElementById('soil-status').innerHTML = fields.map(function(f) {
+    var pill = f.status === 'good' ? 'pill-good' : f.status === 'critical' ? 'pill-critical' : 'pill-water';
+    var txt  = f.status === 'good' ? 'Good' : f.status === 'critical' ? 'Critical' : 'Needs Water';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eef5ef;"><div><div style="font-size:14px;font-weight:600;">' + f.name + '</div><div style="font-size:12px;color:var(--muted);">' + (f.crop||'') + '</div></div><span class="status-pill ' + pill + '">' + txt + '</span></div>';
+  }).join('');
+}
+
+function renderLastIrrFields() {
+  var names = farmerData.fieldnames.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  var cropList = farmerData.crops ? farmerData.crops.split(',').map(function(s) { return s.trim(); }) : [];
+  document.getElementById('last-irr-fields').innerHTML = names.map(function(name, i) {
+    var crop = cropList[i] || cropList[0] || '';
+    var savedDate = (lastIrrData[name] && lastIrrData[name].date) ? lastIrrData[name].date : '';
+    return '<div class="last-irr-field-card"><div class="last-irr-field-name">' + name + '</div><div class="last-irr-field-crop">' + crop + '</div><label class="last-irr-label">Last watered on:</label><input class="last-irr-input" type="date" id="last-irr-' + i + '" max="' + new Date().toISOString().split('T')[0] + '" value="' + savedDate + '"></div>';
+  }).join('');
+}
+
+function submitLastIrrigation() {
+  var names = farmerData.fieldnames.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  var entries = names.map(function(name, i) {
+    var dateVal = document.getElementById('last-irr-'+i) ? document.getElementById('last-irr-'+i).value : '';
+    lastIrrData[name] = { date: dateVal }; // save per-field date
+    return { field: name, last_watered: dateVal || null };
+  });
+  saveSession(); // 💾 persist irrigation dates
+  document.getElementById('last-irr-section').style.display = 'none';
+  document.getElementById('irr-result-section').style.display = 'block';
+  
+  // Mocked Irrigation Schedule Response
+  Promise.resolve({
+    json: function() {
+      return Promise.resolve({
+        ai_suggestion: "According to local offline logic, check soil moisture regularly.",
+        fields: entries.map(function(e){ return { name: e.field, status: 'water', crop: farmerData.crops.split(',')[0], when: 'Water Today', water_needed: 'High', crop_stage: 'Vegetative' }; })
+      });
+    }
+  })
+  .then(function(r) { return r.json(); }).then(renderIrrigation);
+}
+
+function renderIrrigation(data) {
+  if (data.ai_suggestion) document.getElementById('irr-ai-text').textContent = data.ai_suggestion;
+  var fields = data.fields || [];
+  if (!fields.length) { document.getElementById('irr-schedule-list').innerHTML = '<div class="no-data-msg">No schedule data</div>'; return; }
+  document.getElementById('irr-schedule-list').innerHTML = fields.map(function(f) {
+    var cls = f.status==='urgent'?'urgent':f.status==='done'?'done':'';
+    var pc  = f.status==='urgent'?'pill-critical':f.status==='done'?'pill-grey':f.status==='good'?'pill-good':'pill-water';
+    var pt  = f.status==='urgent'?'Urgent':f.status==='done'?'Done':f.status==='good'?'Good':'Water today';
+    return '<div class="irr-field-card ' + cls + '"><div class="irr-field-header"><div><div class="irr-field-name">' + f.name + '</div><div class="irr-field-crop">' + (f.crop||'') + '</div></div><div class="status-pill ' + pc + '">' + pt + '</div></div><div class="irr-details"><div class="irr-detail-box"><div class="irr-detail-label">When</div><div class="irr-detail-val">' + (f.when||'-') + '</div></div><div class="irr-detail-box"><div class="irr-detail-label">Water Needed</div><div class="irr-detail-val">' + (f.water_needed||'-') + '</div></div><div class="irr-detail-box"><div class="irr-detail-label">Crop Stage</div><div class="irr-detail-val">' + (f.crop_stage||'-') + '</div></div></div></div>';
+  }).join('');
+}
+
+function resetIrrigationForm() {
+  document.getElementById('last-irr-section').style.display = 'block';
+  document.getElementById('irr-result-section').style.display = 'none';
+  renderLastIrrFields();
+}
+
+var CROP_DUR = { wheat:45, rice:90, paddy:90, cotton:60, mustard:40, sugarcane:120, maize:50, corn:50, vegetables:35, potato:50, onion:40 };
+
+function getAiDuration(fieldName) {
+  var cards = document.querySelectorAll('.irr-field-card');
+  for (var i=0;i<cards.length;i++) {
+    var ne = cards[i].querySelector('.irr-field-name');
+    if (ne && fieldName && !ne.textContent.toLowerCase().includes(fieldName.toLowerCase())) continue;
+    var vs = cards[i].querySelectorAll('.irr-detail-val');
+    for (var j=0;j<vs.length;j++) {
+      var t = vs[j].textContent||'';
+      var hm = t.match(/([\d.]+)\s*h(our|r)?/i);
+      var mm = t.match(/([\d.]+)\s*min/i);
+      if (hm) return { mins: Math.round(parseFloat(hm[1])*60), reason:'Based on your irrigation schedule' };
+      if (mm) return { mins: Math.round(parseFloat(mm[1])), reason:'Based on your irrigation schedule' };
+    }
+  }
+  var crops = (farmerData.crops||'').toLowerCase();
+  var keys = Object.keys(CROP_DUR);
+  for (var k=0;k<keys.length;k++) { if (crops.includes(keys[k])) return { mins:CROP_DUR[keys[k]], reason:'Recommended for '+keys[k].charAt(0).toUpperCase()+keys[k].slice(1) }; }
+  return { mins:60, reason:'Standard recommendation' };
+}
+
+function fmtMins(m) { var h=Math.floor(m/60),r=m%60; return m<60?m+' min':(r?h+' hr '+r+' min':h+' hr'); }
+
+var irrTimer=null, irrEnd=null, irrTotal=0, irrAiMins=60;
+
+function startIrrigation() {
+  var fi = document.getElementById('irr-which-field');
+  if (farmerData.fieldnames) { var names=farmerData.fieldnames.split(',').map(function(s){return s.trim();}).filter(Boolean); if (names.length===1) fi.value=names[0]; }
+  var ai = getAiDuration(fi.value.trim());
+  irrAiMins = ai.mins;
+  document.getElementById('irr-ai-duration-val').textContent = fmtMins(ai.mins);
+  document.getElementById('irr-ai-duration-reason').textContent = ai.reason;
+  fi.oninput = function() { var u=getAiDuration(fi.value.trim()); irrAiMins=u.mins; document.getElementById('irr-ai-duration-val').textContent=fmtMins(u.mins); document.getElementById('irr-ai-duration-reason').textContent=u.reason; };
+  document.getElementById('irr-timing-modal').classList.add('show');
+}
+
+function confirmStartIrrigation() {
+  var field = document.getElementById('irr-which-field').value.trim();
+  irrAiMins = getAiDuration(field).mins;
+  document.getElementById('irr-timing-modal').classList.remove('show');
+  document.getElementById('irr-running-field').textContent = field ? 'Field: '+field : 'All Fields';
+  document.getElementById('irr-running-duration').textContent = fmtMins(irrAiMins);
+  document.getElementById('irr-running-modal').classList.add('show');
+  irrTotal = irrAiMins*60; irrEnd = Date.now()+irrTotal*1000;
+  updateCountdown();
+  irrTimer = setInterval(updateCountdown, 1000);
+  
+  // Mock run api
+  Promise.resolve();
+  showToast('Irrigation started!');
+}
+
+function updateCountdown() {
+  var rem = Math.max(0, Math.round((irrEnd-Date.now())/1000));
+  var m=Math.floor(rem/60), s=rem%60;
+  document.getElementById('irr-countdown').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  document.getElementById('irr-progress-bar').style.width = (irrTotal>0?(rem/irrTotal)*100:0)+'%';
+  if (rem<=0) { clearInterval(irrTimer); irrTimer=null; document.getElementById('irr-running-modal').classList.remove('show'); showToast('Irrigation complete!'); }
+}
+
+function stopIrrigation() {
+  if (irrTimer) { clearInterval(irrTimer); irrTimer=null; }
+  document.getElementById('irr-running-modal').classList.remove('show');
+  // Mock stop api
+  Promise.resolve();
+  showToast('Irrigation stopped');
+}
+
+function handleFileSelected(event) {
+  var file = event.target.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var p = document.getElementById('img-preview'); p.src=e.target.result; p.style.display='block';
+    document.getElementById('disease-result').className='disease-result';
+    document.getElementById('add-alert-btn').classList.remove('show');
+    analyzeDisease(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function analyzeDisease(imageData) {
+  var loading = document.getElementById('disease-loading'); loading.style.display='block';
+  
+  // Mocked Disease Check Response
+  setTimeout(function() {
+    Promise.resolve({
+      json: function() {
+        return Promise.resolve({
+          type: 'warning', title: 'Simulated Pathogen Found', treatment: 'Mock demo treatment: Ensure proper spacing and try mild organic fungicides.', noAlert: false
+        });
+      }
+    })
+    .then(function(r){return r.json();}).then(function(data){loading.style.display='none';showDiseaseResult(data);});
+  }, 1500);
+}
+
+function showDiseaseResult(data) {
+  lastDiseaseResult = data;
+  var r=document.getElementById('disease-result');
+  r.className='disease-result show '+(data.type||'warning');
+  document.getElementById('disease-title').textContent=data.title||'';
+  document.getElementById('disease-desc').textContent=data.treatment||'';
+  var btn=document.getElementById('add-alert-btn');
+  if (!data.noAlert&&(data.type==='warning'||data.type==='danger')) btn.classList.add('show');
+  else btn.classList.remove('show');
+}
+
+function addDiseaseAlert() {
+  if (!lastDiseaseResult) return;
+  var fn=prompt('Which field has this problem?'); if (fn===null) return;
+  diseaseAlerts.push({id:Date.now(),fieldName:fn.trim()||'Unknown Field',diseaseName:lastDiseaseResult.title,treatment:lastDiseaseResult.treatment,addedAt:new Date(),followupAt:new Date(Date.now()+3*24*60*60*1000),resolved:false});
+  document.getElementById('add-alert-btn').classList.remove('show');
+  saveSession(); // 💾 persist new disease alert
+  renderDiseaseAlerts(); refreshSettingsDisplay();
+  showToast('🚨 Alert added - we will check back in 3 days');
+  document.querySelectorAll('.nav-item')[0].click();
+}
+
+function renderAllAlerts(backendAlerts) {
+  var el=document.getElementById('alerts-list'), all=[];
+  diseaseAlerts.filter(function(a){return !a.resolved;}).forEach(function(a){all.push({cls:'red',icon:'🚨',title:(a.fieldName?a.fieldName+' - ':'')+'Crop needs attention',sub:a.diseaseName});});
+  (backendAlerts||[]).forEach(function(a){all.push({cls:a.type||'blue',icon:a.icon||'🔔',title:a.message,sub:a.sub||''});});
+  if (!all.length) { el.innerHTML='<div class="no-data-msg">No alerts right now</div>'; updateNavBadge(0); updateAttentionStat(0); return; }
+  el.innerHTML=all.map(function(a){return '<div class="alert-item '+a.cls+'"><span class="alert-icon">'+a.icon+'</span><div class="alert-body"><div class="alert-title-text">'+a.title+'</div>'+(a.sub?'<div class="alert-sub">'+a.sub+'</div>':'')+'</div></div>';}).join('');
+  var badge=document.getElementById('alert-count-badge'); badge.textContent=all.length; badge.style.display='inline';
+  updateNavBadge(all.length); updateAttentionStat(diseaseAlerts.filter(function(a){return !a.resolved;}).length);
+}
+
+function renderDiseaseAlerts() { renderAllAlerts([{ type: 'blue', icon: 'ℹ️', message: 'Offline Demo Mode Active', sub: 'All systems simulated locally' }]); }
+function updateNavBadge(c) { var b=document.getElementById('nav-badge'); b.textContent=c; b.style.display=c>0?'inline':'none'; }
+function updateAttentionStat(c) {
+  document.getElementById('dash-attention-val').textContent = c>0?c+' Field'+(c>1?'s':''):'—';
+  document.getElementById('dash-attention-sub').textContent = c>0?'Disease detected':'No alerts';
+  document.getElementById('stat-attention').className = 'stat-card '+(c>0?'red':'grey');
+}
+
+function checkFollowups() {
+  var con=document.getElementById('followup-container'), now=new Date();
+  var due=diseaseAlerts.filter(function(a){return !a.resolved&&a.followupAt<=now;});
+  if (!due.length) { con.innerHTML=''; return; }
+  con.innerHTML=due.map(function(a){return '<div class="followup-banner"><h3>Follow-up - '+a.fieldName+'</h3><p>You reported: <strong>'+a.diseaseName+'</strong><br>Is your crop better now?</p><div class="followup-btns"><button class="fu-btn fu-yes" onclick="resolveAlert('+a.id+',true)">Yes, better!</button><button class="fu-btn fu-no" onclick="resolveAlert('+a.id+',false)">No, still a problem</button></div></div>';}).join('');
+}
+
+function resolveAlert(id, resolved) {
+  var a=diseaseAlerts.find(function(x){return x.id===id;}); if (!a) return;
+  if (resolved) { a.resolved=true; showToast('✅ Alert removed for '+a.fieldName); }
+  else { a.followupAt=new Date(Date.now()+3*24*60*60*1000); showToast('🔔 Will remind again in 3 days'); }
+  saveSession(); // 💾 persist alert change
+  renderDiseaseAlerts(); checkFollowups(); refreshSettingsDisplay();
+}
+
+function clearAllAlerts() {
+  if (!diseaseAlerts.length) { showToast('No alerts to clear'); return; }
+  if (!confirm('Clear all disease alerts?')) return;
+  diseaseAlerts=[]; saveSession(); // 💾 persist cleared alerts
+  renderDiseaseAlerts(); checkFollowups(); refreshSettingsDisplay(); showToast('✅ All alerts cleared');
+}
+
+function runCropAdvisor() {
+  var btn = document.getElementById('crop-btn');
+  var soil   = document.getElementById('c-soil').value.trim();
+  var season = document.getElementById('c-season').value.trim();
+  var water  = document.getElementById('c-water').value.trim();
+
+  if (!soil || !season) { showToast('Please enter soil type and season'); return; }
+
+  btn.textContent = '⏳ Analysing...'; btn.disabled = true;
+  document.getElementById('crop-results').style.display = 'none';
+
+  // Mocked Crop Advisor Output
+  setTimeout(function() {
+    Promise.resolve({
+      json: function() {
+        return Promise.resolve({
+          content: [{ text: '[{"name":"Wheat","emoji":"🌾","why":"Offline suggestion for ' + soil + ' soil."},{"name":"Pulses","emoji":"🌱","why":"Helps retain soil nitrogen."},{"name":"Mustard","emoji":"🌼","why":"Requires moderate water."}]' }]
+        });
+      }
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var raw = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '[]';
+      raw = raw.replace(/```json|```/g, '').trim();
+      var crops;
+      try { crops = JSON.parse(raw); } catch(e) { crops = []; }
+      showCropResults(crops);
+    })
+    ['finally'](function(){ btn.textContent = '🔍 Get Crop Suggestions'; btn.disabled = false; });
+  }, 1000);
+}
+
+function showCropResults(crops) {
+  var resultsEl = document.getElementById('crop-results');
+  if (!crops || !crops.length) {
+    resultsEl.innerHTML = '<div class="card-title">✅ Best Crops for Your Field</div><div class="no-data-msg">No suggestions returned. Please try again.</div>';
+    resultsEl.style.display = 'block';
+    return;
+  }
+  document.getElementById('crop-grid').innerHTML = crops.map(function(c) {
+    return '<div class="crop-card">' +
+      '<div class="crop-emoji">' + (c.emoji || '🌱') + '</div>' +
+      '<div class="crop-name">' + (c.name || '') + '</div>' +
+      '<div class="crop-why">'  + (c.why  || '') + '</div>' +
+      '</div>';
+  }).join('');
+  resultsEl.style.display = 'block';
+  showToast('✅ Crop suggestions ready!');
+}
+
+var FIELD_LABELS={name:'Your Name',village:'Village / Town',water:'Water Source',numfields:'Number of Fields',fieldnames:'Field Names',crops:'Crops Grown',acres:'Total Land (Acres)',notes:'Farm Notes'};
+
+function refreshSettingsDisplay() {
+  var f=farmerData;
+  document.getElementById('s-name-val').textContent=f.name||'—';
+  document.getElementById('s-village-val').textContent=f.village||'—';
+  document.getElementById('s-water-val').textContent=f.water||'Not set';
+  document.getElementById('s-numfields-val').textContent=f.numfields||'—';
+  document.getElementById('s-fieldnames-val').textContent=f.fieldnames||'—';
+  document.getElementById('s-crops-val').textContent=f.crops||'—';
+  document.getElementById('s-acres-val').textContent=f.acres||'Not set';
+  var active=diseaseAlerts.filter(function(a){return !a.resolved;});
+  document.getElementById('s-alerts-val').textContent=active.length?active.map(function(a){return a.fieldName+' - '+a.diseaseName;}).join(', '):'None';
+  if (document.getElementById('sb-name')) {
+    document.getElementById('sb-name').textContent=f.name;
+    document.getElementById('sb-sub').textContent=f.village+' - '+f.numfields+' fields'+(f.acres?' - '+f.acres+' acres':'');
+  }
+}
+
+function editField(fieldKey) {
+  currentEditField=fieldKey;
+  document.getElementById('modal-title').textContent='Edit: '+FIELD_LABELS[fieldKey];
+  var val=farmerData[fieldKey]||'', isTA=['crops','notes','fieldnames'].includes(fieldKey);
+  document.getElementById('modal-input-wrap').innerHTML=isTA?'<textarea class="settings-edit-input" id="modal-input" rows="3">'+val+'</textarea>':'<input class="settings-edit-input" id="modal-input" type="'+(fieldKey==='numfields'||fieldKey==='acres'?'number':'text')+'" value="'+val+'">';
+  document.getElementById('edit-modal').classList.add('show');
+  setTimeout(function(){document.getElementById('modal-input').focus();},100);
+}
+
+function saveModalField() {
+  var nv=document.getElementById('modal-input').value.trim();
+  if (['name','village','numfields','fieldnames','crops'].includes(currentEditField)&&!nv){showToast('This field cannot be empty');return;}
+  farmerData[currentEditField]=nv;
+  if (currentEditField==='numfields') farmerData.numfields=parseInt(nv)||farmerData.numfields;
+  saveSession(); // 💾 persist settings change
+  refreshSettingsDisplay(); closeModal(); showToast('✅ Updated!');
+}
+
+function closeModal() { document.getElementById('edit-modal').classList.remove('show'); }
+
+/* ═══════════════════════════════════
+   MOCK LOCATION LOGIC
+═══════════════════════════════════ */
+function initLoginMap(lat, lon) {
+  document.getElementById('map-preview').style.display = 'block';
+  // Mock UI placeholder for Maps
+  document.getElementById('google-map-login').innerHTML = '<div style="padding:40px;">Map preview mocked for coordinates: ' + lat.toFixed(2) + ', ' + lon.toFixed(2) + '</div>';
+}
+
+function initDashboardMap(lat, lon) {
+  var card = document.getElementById('farm-map-card');
+  if (!card) return;
+  card.style.display = 'block';
+  // Mock UI placeholder for Dashboard Maps
+  document.getElementById('dashboard-map').innerHTML = '<div style="padding:40px; font-weight:bold;">Offline Map Mode - ' + (farmerData.name || 'Your Farm') + '<br><span style="font-size:12px; font-weight:normal;">' + (farmerData.village || '') + '</span></div>';
+}
+
+function reverseGeocode(lat, lon) {
+  var status = document.getElementById('loc-status');
+  farmerLat = lat; farmerLon = lon;
+  
+  var locText = "Simulated City, Simulated State";
+  document.getElementById('l-village').value = locText;
+  status.style.display = 'block';
+  status.style.color = 'var(--green)';
+  status.textContent = '📍 Location detected: ' + locText;
+}
+
+function detectLocation() {
+  var status = document.getElementById('loc-status');
+  status.style.display = 'block';
+  status.style.color = 'var(--muted)';
+  status.textContent = '⏳ Getting your location...';
+
+  setTimeout(function() {
+    farmerLat = 20.5937;
+    farmerLon = 78.9629;
+    initLoginMap(farmerLat, farmerLon);
+    reverseGeocode(farmerLat, farmerLon);
+  }, 1000);
+}
+
+function chatTime() { return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function chatKeydown(e) { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChatMessage();} }
+
+function sendChip(btn) {
+  document.getElementById('chat-input').value=btn.textContent;
+  document.getElementById('chat-chips').style.display='none';
+  sendChatMessage();
+}
+
+function appendBubble(role,text) {
+  var msgs=document.getElementById('chat-messages');
+  var div=document.createElement('div'); div.className='chat-bubble '+role;
+  div.innerHTML='<div class="chat-bubble-inner">'+text+'</div><div class="chat-time">'+chatTime()+'</div>';
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight; return div;
+}
+
+function showTyping() {
+  var msgs=document.getElementById('chat-messages');
+  var div=document.createElement('div'); div.className='chat-bubble ai'; div.id='chat-typing-indicator';
+  div.innerHTML='<div class="chat-bubble-inner"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
+
+function hideTyping() { var el=document.getElementById('chat-typing-indicator'); if (el) el.remove(); }
+
+function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fmtReply(text) {
+  return escHtml(text)
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/gs,'<ul style="margin:6px 0 6px 16px;padding:0;">$1</ul>')
+    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+}
+
+function sendChatMessage() {
+  if (chatTyping) return;
+  var input=document.getElementById('chat-input');
+  var text=input.value.trim(); if (!text) return;
+  input.value=''; input.style.height='auto';
+  document.getElementById('chat-send').disabled=true;
+  document.getElementById('chat-chips').style.display='none';
+  appendBubble('user',escHtml(text));
+  chatHistory.push({role:'user',content:text});
+  chatTyping=true; showTyping();
+  document.getElementById('chat-status-line').textContent='Thinking...';
+
+  // Mocked AI Chat Output
+  setTimeout(function() {
+    Promise.resolve({
+      json: function() {
+        return Promise.resolve({
+          content: [{ text: "This is an offline mock response from Kisan AI. The live API has been disabled, but I can see you're asking about your farm in " + farmerData.village + "!" }]
+        });
+      }
+    })
+    .then(function(r){return r.json();})
+    .then(function(data){
+      hideTyping();
+      var reply=(data.content&&data.content[0]&&data.content[0].text)?data.content[0].text:'Sorry, could not get a response. Please try again.';
+      chatHistory.push({role:'assistant',content:reply});
+      appendBubble('ai',fmtReply(reply));
+      document.getElementById('chat-status-line').textContent='Ask me anything about farming';
+    })
+    ['finally'](function(){chatTyping=false;document.getElementById('chat-send').disabled=false;});
+  }, 1000);
+}
+/* ═══════════════════════════════════
+   AUTO-RESTORE SESSION ON PAGE LOAD
+   If a valid cookie exists, skip the
+   login screen and go straight to app.
+═══════════════════════════════════ */
+(function restoreOnLoad() {
+  if (loadSession()) {
+    // Pre-fill login fields in case user manually wants to edit and re-submit
+    var setVal = function(id, val) { var el = document.getElementById(id); if (el) el.value = val || ''; };
+    setVal('l-name',       farmerData.name);
+    setVal('l-village',    farmerData.village);
+    setVal('l-numfields',  farmerData.numfields);
+    setVal('l-acres',      farmerData.acres);
+    setVal('l-fieldnames', farmerData.fieldnames);
+    setVal('l-crops',      farmerData.crops);
+    setVal('l-water',      farmerData.water);
+    setVal('l-notes',      farmerData.notes);
+    window._restoredFromCookie = true;
+    initApp(); // skip login, go straight to dashboard
+  }
+})();
+</script>
+</body>
+</html>
