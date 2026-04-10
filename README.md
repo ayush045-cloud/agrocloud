@@ -1,11 +1,12 @@
-# Agro Mind – Kisan App · Backend
+# Agro Mind – Kisan App
 
-A Python/Flask backend for the **Agro Mind - Kisan App** single-page farming assistant.
+A full-stack farming assistant: **Python/Flask backend + single-page HTML frontend** served together from one process.
 
 ## Features
 
 | Endpoint | Description |
 |---|---|
+| `GET /` | Serves the frontend (index.html) |
 | `POST /api/dashboard` | Farm overview – field statuses & alerts |
 | `POST /api/irrigation/schedule` | AI-powered irrigation schedule |
 | `POST /api/irrigation/run` | Log irrigation start |
@@ -19,7 +20,30 @@ A Python/Flask backend for the **Agro Mind - Kisan App** single-page farming ass
 * Python 3.11+
 * An [Anthropic API key](https://console.anthropic.com/) (for AI features)
 
-## Quick Start
+## Deploy Online (Render.com – free tier)
+
+1. **Push this repo to GitHub** (if not already done)
+2. Go to [https://render.com](https://render.com) and sign up / log in
+3. Click **New → Web Service** → connect your GitHub repo
+4. Render auto-detects `render.yaml` — click **Apply**
+5. In the **Environment** tab, add:
+   - `ANTHROPIC_API_KEY` = `sk-ant-...` (your key from https://console.anthropic.com/)
+6. Click **Deploy** — your app will be live at `https://agrocloud.onrender.com` (or similar URL)
+
+That's it — the same URL serves both the frontend and the API.
+
+---
+
+## Deploy Online (Railway.app – alternative)
+
+1. Go to [https://railway.app](https://railway.app) and sign in with GitHub
+2. Click **New Project → Deploy from GitHub repo** → select this repo
+3. Add environment variable `ANTHROPIC_API_KEY` in the **Variables** tab
+4. Railway detects the `Procfile` and deploys automatically
+
+---
+
+## Local Development
 
 ```bash
 # 1. Clone the repository (if you haven't already)
@@ -42,9 +66,7 @@ set ANTHROPIC_API_KEY=sk-ant-...        # Windows CMD
 python app.py
 ```
 
-The server starts at **http://127.0.0.1:5000**.
-
-Open `index.html` in your browser (or serve it with a local HTTP server) and the frontend will automatically connect to the backend.
+The server starts at **http://localhost:5000** and serves both the frontend and the API.
 
 ## Environment Variables
 

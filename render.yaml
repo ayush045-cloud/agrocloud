@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: agrocloud
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false          # you will paste your key in the Render dashboard
+      - key: PYTHON_VERSION
+        value: 3.11.0

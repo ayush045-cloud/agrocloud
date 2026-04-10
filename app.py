@@ -9,11 +9,11 @@ import json
 import base64
 import sqlite3
 import datetime
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import anthropic
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=".", static_url_path="")
 CORS(app)
 
 # ---------------------------------------------------------------------------
@@ -46,6 +46,15 @@ def init_db():
 
 
 init_db()
+
+
+# ---------------------------------------------------------------------------
+# Serve frontend
+# ---------------------------------------------------------------------------
+@app.route("/")
+def index():
+    return send_from_directory(".", "index.html")
+
 
 # ---------------------------------------------------------------------------
 # Anthropic client (reads ANTHROPIC_API_KEY from environment)
@@ -444,4 +453,4 @@ def crop_advisor():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
-    app.run(host="127.0.0.1", port=port, debug=debug)
+    app.run(host="0.0.0.0", port=port, debug=debug)
