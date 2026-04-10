@@ -52,6 +52,7 @@ Open `index.html` in your browser (or serve it with a local HTTP server) and the
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Yes (for AI endpoints) | Anthropic API key for Claude |
 | `PORT` | No | Override the default port (5000) |
+| `FLASK_DEBUG` | No | Set to `1` to enable debug mode (development only) |
 
 ## Data Storage
 

@@ -227,7 +227,7 @@ def irrigation_run():
             "INSERT INTO irrigation_runs (field, started_at, duration_minutes, farmer_name) VALUES (?,?,?,?)",
             (
                 data.get("field", ""),
-                data.get("started_at", datetime.datetime.utcnow().isoformat()),
+                data.get("started_at", datetime.datetime.now(datetime.timezone.utc).isoformat()),
                 data.get("duration_minutes"),
                 farmer.get("name", ""),
             ),
@@ -238,7 +238,7 @@ def irrigation_run():
 
 @app.route("/api/irrigation/stop", methods=["POST"])
 def irrigation_stop():
-    stopped_at = datetime.datetime.utcnow().isoformat()
+    stopped_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
     with get_db() as conn:
         conn.execute(
             "UPDATE irrigation_runs SET stopped_at=? WHERE stopped_at IS NULL",
@@ -283,6 +283,7 @@ def disease_analyze():
         'Set noAlert to true only when the crop is healthy.'
     )
 
+    raw = ""
     try:
         msg = get_anthropic().messages.create(
             model="claude-3-5-sonnet-20241022",
@@ -442,4 +443,5 @@ def crop_advisor():
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="127.0.0.1", port=port, debug=True)
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(host="127.0.0.1", port=port, debug=debug)
